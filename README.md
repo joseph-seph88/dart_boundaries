@@ -46,23 +46,22 @@ analyzer:
   plugins:
     - custom_lint
 
-# Enable the rules you want (all rules are off by default)
 custom_lint:
   rules:
     - layer_boundaries
 
-# Configure each rule under the dart_boundaries: key
 dart_boundaries:
   layer_boundaries:
     elements:
       - type: feature
-        pattern: 'lib/features/*'
+        pattern: 'lib/features/{{ name }}'
       - type: shared
         pattern: 'lib/shared/**'
       - type: core
         pattern: 'lib/core/**'
     rules:
       - from: feature
+        disallow: [feature]
         allow: [shared, core]
       - from: shared
         allow: [core]
@@ -71,7 +70,8 @@ dart_boundaries:
 **4. Restart your IDE's analysis server** to activate the plugin.
 
 > `custom_lint: rules:` controls which rules are active.  
-> `dart_boundaries:` controls each rule's options.
+> `dart_boundaries:` controls each rule's options.  
+> After editing `analysis_options.yaml`, restart the analysis server to pick up config changes.
 
 ---
 
@@ -79,58 +79,103 @@ dart_boundaries:
 
 ### `layer_boundaries` *(recommended)*
 
-Define named layer types and declare which types are allowed to import from which. Any import that violates the declared rules is flagged.
+Define named layer types and declare which types are allowed to import from which.
+
+#### Capture groups — `{{ name }}`
+
+`{{ name }}` in a pattern captures a single path segment. Files with the **same captured value** are treated as the same instance (intra-feature), while files with **different values** are treated as different instances (cross-feature).
 
 ```yaml
 dart_boundaries:
   layer_boundaries:
     elements:
       - type: feature
-        pattern: 'lib/features/*'   # * = one direct subfolder
+        pattern: 'lib/features/{{ name }}'  # captures: auth, home, profile …
       - type: shared
-        pattern: 'lib/shared/**'    # ** = any depth
+        pattern: 'lib/shared/**'
       - type: core
         pattern: 'lib/core/**'
     rules:
       - from: feature
-        allow: [shared, core]   # feature may import shared and core
+        disallow: [feature]      # cross-feature (different {{ name }}) is denied
+        allow: [shared, core]    # intra-feature imports remain fine
       - from: shared
-        allow: [core]           # shared may only import core
-                                # core has no rule → no restriction
+        allow: [core]
 ```
 
 ```dart
-// lib/features/home/home_page.dart  (type: feature)
+// lib/features/home/home_page.dart  (type: feature, name: home)
 
-// ❌ layer_boundaries — feature → feature is not in the allow list
+// ❌ layer_boundaries — "feature" (home) is not allowed to import from "feature" (auth)
 import 'package:app/features/auth/auth_service.dart';
+
+// ✅ OK — intra-feature (same name capture)
+import 'package:app/features/home/home_service.dart';
 
 // ✅ OK — shared is in the allow list
 import 'package:app/shared/widgets/button.dart';
 ```
 
-**Notes:**
-- Files that do not match any `elements` pattern are silently skipped.
-- Imports within the same type (e.g. feature → feature *same file*) are always allowed.
-- A type with no `rules` entry has no restrictions.
+#### `allow` vs `disallow`
+
+| Option | Behavior |
+|--------|----------|
+| `allow: [shared, core]` | Block every import not in the list (positive list) |
+| `disallow: [feature]` | Block only the listed types; everything else is fine (negative list) |
+| Both | `disallow` takes precedence; `allow` governs the rest |
+
+#### `default` — global fallback
+
+Controls what happens when a type has no explicit ruling for an import:
+
+| Value | Behavior |
+|-------|----------|
+| `allow` *(default)* | Types without a `from` rule are unrestricted; `disallow`-only rules block only the listed types |
+| `disallow` | Types without a `from` rule block all cross-type imports; `disallow`-only rules also block everything not explicitly `allow`-ed |
+
+```yaml
+dart_boundaries:
+  layer_boundaries:
+    default: disallow   # block everything unless explicitly allowed
+    elements:
+      - type: feature
+        pattern: 'lib/features/{{ name }}'
+      - type: shared
+        pattern: 'lib/shared/**'
+      - type: core
+        pattern: 'lib/core/**'
+    rules:
+      - from: feature
+        allow: [shared, core]   # feature may import shared and core only
+      - from: shared
+        allow: [core]           # shared may import core only
+      # core has no rule → default: disallow blocks all cross-type imports from core
+```
+
+#### Notes
+
+- Files that match no element pattern are silently skipped.
+- Same-instance imports (same type + same captured values) are always allowed even under `default: disallow`.
+- When `allow` is specified in a rule it always takes full control of that type regardless of `default`.
 
 | Option | Description |
 |--------|-------------|
+| `default` | `allow` (default) or `disallow` — global fallback for types without an explicit ruling |
 | `elements` | List of `type` / `pattern` definitions |
-| `rules` | List of `from` / `allow` entries |
+| `rules` | List of `from` / `allow` / `disallow` entries |
 
 ---
 
 ### `no_cross_feature_import`
 
-Simpler rule — prevents any file inside one feature folder from importing any file in a different feature folder.
+Simpler rule — prevents any file inside one feature folder from importing any file in a different feature folder. No configuration required beyond enabling.
 
 ```dart
 // ❌ no_cross_feature_import
 import 'package:app/features/auth/auth_service.dart';
 
 // ✅ OK — core/ is outside lib/features/
-import 'package:app/core/di/locator.dart';
+import 'package:app/core/di.dart';
 ```
 
 | Option | Default | Description |
@@ -142,23 +187,29 @@ import 'package:app/core/di/locator.dart';
 
 ### `no_banned_imports`
 
-Blocks specific import paths. Each entry maps source files (`paths`) to forbidden imports (`deny`).
+Blocks specific import paths. Each entry maps source files to forbidden imports.
 
 ```yaml
 dart_boundaries:
   no_banned_imports:
     entries:
-      - paths:
-          - 'lib/features/home/**'
-        deny:
-          - 'lib/features/auth/**'
-        message: 'home → auth import is banned.'
-      - paths:
-          - 'lib/**'
-        deny:
-          - 'package:firebase_core/.*'
-        message: 'Firebase must only be used in the infra/ layer.'
+      # Global deny — no paths means this applies to ALL files
+      - deny: ['lib/core/internal/**']
+        message: 'Do not import internal core APIs.'
+
+      # Scoped deny with an exemption
+      - paths: ['lib/features/**']
+        exclude_paths: ['lib/features/auth/**']   # auth folder is exempt
+        deny: ['lib/features/home/**']
+        message: 'home → auth is banned.'
 ```
+
+| Option | Description |
+|--------|-------------|
+| `paths` | Files the rule applies to. Omit to apply to **all files**. |
+| `exclude_paths` | Files to exempt from this entry (optional). |
+| `deny` | Import paths to block. |
+| `message` | Custom error message (optional). |
 
 **Quick fix:** removes the banned import line.
 
@@ -203,15 +254,17 @@ Or for the whole file:
 
 ## Pattern syntax
 
-`pattern`, `paths`, and `deny` values support **glob** wildcards or **anchored regular expressions**.
+`pattern`, `paths`, `exclude_paths`, and `deny` values support **glob** wildcards, **capture groups**, or **anchored regular expressions**.
 
 | Pattern | Type | Matches |
 |---------|------|---------|
+| `lib/features/{{ name }}` | capture | Any file under `lib/features/{name}/`, captures the name |
 | `lib/features/*` | glob | Any direct subfolder of `lib/features/` (and its files) |
 | `lib/features/**` | glob | Any file anywhere under `lib/features/` |
 | `lib/features/*/index.dart` | glob | `index.dart` in any direct feature subfolder |
 | `lib/features/auth/.*` | regex | Any file under `lib/features/auth/` (legacy) |
 | `package:firebase_core/.*` | regex | Any import from `firebase_core` |
 
-> If the pattern contains `*` or `**` (and no `[` character classes), it is treated as a glob.  
-> Otherwise it is used as an anchored regular expression — existing regex patterns continue to work.
+> A pattern with `{{ }}` is treated as a capture pattern.  
+> A pattern with `*`/`**` (and no `[`) is treated as a glob.  
+> Everything else is used as an anchored regular expression — existing patterns continue to work.

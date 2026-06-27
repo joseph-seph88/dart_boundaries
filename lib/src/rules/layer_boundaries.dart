@@ -33,8 +33,11 @@ class LayerBoundaries extends DartLintRule {
       resolver.path.substring(packageRoot.length + 1),
     );
 
-    final currentType = _findType(currentRel, cfg.elements);
-    if (currentType == null) return;
+    final currentResult = _findTypeWithCaptures(currentRel, cfg.elements);
+    if (currentResult == null) return;
+
+    final currentType = currentResult.$1;
+    final currentCaptures = currentResult.$2;
 
     LayerRule? rule;
     for (final r in cfg.rules) {
@@ -43,7 +46,11 @@ class LayerBoundaries extends DartLintRule {
         break;
       }
     }
-    if (rule == null) return;
+
+    // When default is allow and there is no rule, nothing to check.
+    if (rule == null && cfg.defaultBehavior == LayerBoundaryDefault.allow) {
+      return;
+    }
 
     final packageName = context.pubspec.name;
 
@@ -59,27 +66,61 @@ class LayerBoundaries extends DartLintRule {
       );
       if (importedRel == null) return;
 
-      final importedType = _findType(importedRel, cfg.elements);
-      if (importedType == null || importedType == currentType) return;
+      final importedResult = _findTypeWithCaptures(importedRel, cfg.elements);
+      if (importedResult == null) return;
 
-      if (!rule!.allow.contains(importedType)) {
-        reporter.atNode(
-          node,
-          LintCode(
-            name: _code.name,
-            problemMessage:
-                '"$currentType" is not allowed to import from "$importedType".',
-            correctionMessage: _code.correctionMessage,
-          ),
-        );
+      final importedType = importedResult.$1;
+      final importedCaptures = importedResult.$2;
+
+      // Same type AND same instance (captures match) → always allowed
+      if (importedType == currentType &&
+          _capturesMatch(currentCaptures, importedCaptures)) {
+        return;
+      }
+
+      // Explicit disallow takes precedence
+      if (rule?.disallow.contains(importedType) == true) {
+        reporter.atNode(node, _makeCode(currentType, importedType));
+        return;
+      }
+
+      // Allow list present → it controls everything (default does not apply)
+      if (rule != null && rule.allow.isNotEmpty) {
+        if (!rule.allow.contains(importedType)) {
+          reporter.atNode(node, _makeCode(currentType, importedType));
+        }
+        return;
+      }
+
+      // No explicit ruling → fall back to default
+      if (cfg.defaultBehavior == LayerBoundaryDefault.disallow) {
+        reporter.atNode(node, _makeCode(currentType, importedType));
       }
     });
   }
 
-  String? _findType(String path, List<ElementType> elements) {
+  (String, Map<String, String>)? _findTypeWithCaptures(
+    String path,
+    List<ElementType> elements,
+  ) {
     for (final e in elements) {
-      if (matchesElementPattern(path, e.pattern)) return e.type;
+      final captures = matchElementPatternWithCaptures(path, e.pattern);
+      if (captures != null) return (e.type, captures);
     }
     return null;
   }
+
+  bool _capturesMatch(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (a[key] != b[key]) return false;
+    }
+    return true;
+  }
+
+  LintCode _makeCode(String from, String to) => LintCode(
+        name: _code.name,
+        problemMessage: '"$from" is not allowed to import from "$to".',
+        correctionMessage: _code.correctionMessage,
+      );
 }

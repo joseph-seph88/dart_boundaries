@@ -11,20 +11,23 @@ custom_lint:
 
 dart_boundaries:
   # ── layer_boundaries ──────────────────────────────────────────────────────
-  # Define named layer types and declare which layers may import from which.
+  # {{ name }} captures the feature folder name, enabling cross-feature detection.
+  # default: disallow — block all cross-type imports unless explicitly allowed.
   layer_boundaries:
+    default: disallow
     elements:
       - type: feature
-        pattern: 'lib/features/*'   # * = one direct subfolder
+        pattern: 'lib/features/{{ name }}'  # captures: auth, home, profile …
       - type: shared
-        pattern: 'lib/shared/**'    # ** = any depth
+        pattern: 'lib/shared/**'
       - type: core
         pattern: 'lib/core/**'
     rules:
       - from: feature
-        allow: [shared, core]   # feature → feature is NOT allowed
+        allow: [shared, core]    # feature may only import shared and core
       - from: shared
-        allow: [core]           # shared may only reach core
+        allow: [core]            # shared may only import core
+      # core has no rule → default: disallow blocks all cross-type imports
 
   # ── no_cross_feature_import ───────────────────────────────────────────────
   no_cross_feature_import:
@@ -33,11 +36,15 @@ dart_boundaries:
   # ── no_banned_imports ─────────────────────────────────────────────────────
   no_banned_imports:
     entries:
-      - paths:
-          - 'lib/features/home/**'
-        deny:
-          - 'lib/features/auth/**'
-        message: 'home → auth is banned. Pass AuthService via DI instead.'
+      # Global deny — no paths means this applies to ALL files
+      - deny: ['lib/core/internal/**']
+        message: 'Do not import from internal core APIs directly.'
+
+      # Scoped deny with an exemption
+      - paths: ['lib/features/**']
+        exclude_paths: ['lib/features/auth/**']  # auth folder is exempt
+        deny: ['lib/features/home/**']
+        message: 'home → auth is banned. Use dependency injection instead.'
 
   # ── only_import_from_index ────────────────────────────────────────────────
   only_import_from_index:

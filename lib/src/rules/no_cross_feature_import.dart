@@ -34,6 +34,13 @@ class NoCrossFeatureImport extends DartLintRule {
     final currentFeature = extractFeatureName(currentRel, cfg.featuresPath);
     if (currentFeature == null) return;
 
+    final effectiveCode = cfg.message != null
+        ? LintCode(
+            name: _code.name,
+            problemMessage: cfg.message!,
+            correctionMessage: _code.correctionMessage,
+          )
+        : _code;
     final packageName = context.pubspec.name;
 
     context.registry.addImportDirective((node) {
@@ -50,10 +57,6 @@ class NoCrossFeatureImport extends DartLintRule {
 
       final importedFeature = extractFeatureName(importedRel, cfg.featuresPath);
       if (importedFeature == null || importedFeature == currentFeature) return;
-
-      final effectiveCode = cfg.message != null
-          ? LintCode(name: _code.name, problemMessage: cfg.message!)
-          : _code;
 
       reporter.atNode(node, effectiveCode);
     });

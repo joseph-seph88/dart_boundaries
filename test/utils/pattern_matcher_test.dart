@@ -48,15 +48,12 @@ void main() {
   group('matchesPattern — glob', () {
     test('** matches file at any depth', () {
       expect(
-        matchesPattern(
-          'lib/features/auth/data/repo.dart',
-          'lib/features/**',
-        ),
+        matchesPattern('lib/features/auth/data/repo.dart', 'lib/features/**'),
         isTrue,
       );
     });
 
-    test('** does not match file outside the prefix', () {
+    test('** does not match file outside prefix', () {
       expect(
         matchesPattern('lib/shared/utils.dart', 'lib/features/**'),
         isFalse,
@@ -120,10 +117,7 @@ void main() {
   group('matchesElementPattern', () {
     test('lib/features/* matches file within a feature subdirectory', () {
       expect(
-        matchesElementPattern(
-          'lib/features/auth/page.dart',
-          'lib/features/*',
-        ),
+        matchesElementPattern('lib/features/auth/page.dart', 'lib/features/*'),
         isTrue,
       );
     });
@@ -157,12 +151,97 @@ void main() {
 
     test('lib/shared/** does not match file outside shared', () {
       expect(
-        matchesElementPattern(
+        matchesElementPattern('lib/features/auth/page.dart', 'lib/shared/**'),
+        isFalse,
+      );
+    });
+  });
+
+  group('matchElementPatternWithCaptures — capture groups', () {
+    test('captures feature name from path', () {
+      expect(
+        matchElementPatternWithCaptures(
+          'lib/features/auth/page.dart',
+          'lib/features/{{ name }}',
+        ),
+        equals({'name': 'auth'}),
+      );
+    });
+
+    test('captures feature name from deeply nested path', () {
+      expect(
+        matchElementPatternWithCaptures(
+          'lib/features/home/data/home_repo.dart',
+          'lib/features/{{ name }}',
+        ),
+        equals({'name': 'home'}),
+      );
+    });
+
+    test('returns null when path does not match pattern', () {
+      expect(
+        matchElementPatternWithCaptures(
+          'lib/shared/utils.dart',
+          'lib/features/{{ name }}',
+        ),
+        isNull,
+      );
+    });
+
+    test('captures multiple segments', () {
+      expect(
+        matchElementPatternWithCaptures(
+          'lib/features/auth/page.dart',
+          'lib/{{ layer }}/{{ name }}',
+        ),
+        equals({'layer': 'features', 'name': 'auth'}),
+      );
+    });
+
+    test('non-capture pattern returns empty map on match', () {
+      expect(
+        matchElementPatternWithCaptures(
+          'lib/shared/utils.dart',
+          'lib/shared/**',
+        ),
+        equals({}),
+      );
+    });
+
+    test('non-capture pattern returns null on non-match', () {
+      expect(
+        matchElementPatternWithCaptures(
           'lib/features/auth/page.dart',
           'lib/shared/**',
         ),
-        isFalse,
+        isNull,
       );
+    });
+
+    test('different features produce different captures', () {
+      final authCaptures = matchElementPatternWithCaptures(
+        'lib/features/auth/page.dart',
+        'lib/features/{{ name }}',
+      );
+      final homeCaptures = matchElementPatternWithCaptures(
+        'lib/features/home/page.dart',
+        'lib/features/{{ name }}',
+      );
+      expect(authCaptures, isNotNull);
+      expect(homeCaptures, isNotNull);
+      expect(authCaptures!['name'], isNot(equals(homeCaptures!['name'])));
+    });
+
+    test('same feature produces same captures', () {
+      final a = matchElementPatternWithCaptures(
+        'lib/features/auth/page.dart',
+        'lib/features/{{ name }}',
+      );
+      final b = matchElementPatternWithCaptures(
+        'lib/features/auth/service.dart',
+        'lib/features/{{ name }}',
+      );
+      expect(a, equals(b));
     });
   });
 }

@@ -1,11 +1,12 @@
-// ✅ OK — shared and core are in the allow list for feature
+// ✅ OK — shared and core are in the allow list for the feature layer
 import 'package:dart_boundaries_example/shared/widgets/button.dart';
 import 'package:dart_boundaries_example/core/di.dart';
 
-// ❌ layer_boundaries   — feature is not allowed to import from feature
+// ❌ layer_boundaries        — "feature/home" cannot import from "feature/auth"
+//                              ({{ name }} captures distinguish the two features)
 // ❌ no_cross_feature_import — direct cross-feature import
-// ❌ no_banned_imports  — home → auth is explicitly banned
-// ❌ only_import_from_index — internal file, not via index.dart
+// ❌ no_banned_imports       — home → auth is banned in config
+// ❌ only_import_from_index  — internal file, not via index.dart
 import 'package:dart_boundaries_example/features/auth/auth_service.dart';
 
 class HomePage {

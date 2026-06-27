@@ -44,24 +44,37 @@ class NoBannedImports extends DartLintRule {
       final uri = node.uri.stringValue;
       if (uri == null) return;
 
-      for (final entry in entries) {
-        if (!matchesAnyPattern(currentRel, entry.paths)) continue;
+      final importedRel = importToRelativePath(
+        importUri: uri,
+        currentFilePath: resolver.path,
+        packageRoot: packageRoot,
+        packageName: packageName,
+      );
+      final pathToCheck = importedRel ?? uri;
 
-        final importedRel = importToRelativePath(
-          importUri: uri,
-          currentFilePath: resolver.path,
-          packageRoot: packageRoot,
-          packageName: packageName,
-        );
-        final pathToCheck = importedRel ?? uri;
+      for (final entry in entries) {
+        // paths == null → applies to all files; otherwise check match
+        if (entry.paths != null &&
+            !matchesAnyPattern(currentRel, entry.paths!)) {
+          continue;
+        }
+
+        // Skip files that are explicitly excluded
+        if (entry.excludePaths.isNotEmpty &&
+            matchesAnyPattern(currentRel, entry.excludePaths)) {
+          continue;
+        }
 
         if (matchesAnyPattern(pathToCheck, entry.deny)) {
           reporter.atNode(
             node,
-            LintCode(
-              name: _code.name,
-              problemMessage: entry.message ?? 'This import is not allowed.',
-            ),
+            entry.message != null
+                ? LintCode(
+                    name: _code.name,
+                    problemMessage: entry.message!,
+                    correctionMessage: _code.correctionMessage,
+                  )
+                : _code,
           );
           return;
         }
@@ -88,11 +101,12 @@ class _RemoveBannedImportFix extends DartFix {
       );
 
       changeBuilder.addDartFileEdit((builder) {
-        // Delete the entire line including the trailing newline
         final lineIndex =
             resolver.lineInfo.getLocation(node.offset).lineNumber - 1;
         final start = resolver.lineInfo.getOffsetOfLine(lineIndex);
-        final end = resolver.lineInfo.getOffsetOfLine(lineIndex + 1);
+        final end = lineIndex + 1 < resolver.lineInfo.lineCount
+            ? resolver.lineInfo.getOffsetOfLine(lineIndex + 1)
+            : node.end;
         builder.addDeletion(SourceRange(start, end - start));
       });
     });

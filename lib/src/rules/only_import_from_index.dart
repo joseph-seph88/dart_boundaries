@@ -40,6 +40,7 @@ class OnlyImportFromIndex extends DartLintRule {
       resolver.path.substring(packageRoot.length + 1),
     );
     final currentFeature = extractFeatureName(currentRel, cfg.featuresPath);
+    final normalizedFeatures = toForwardSlash(p.normalize(cfg.featuresPath));
     final packageName = context.pubspec.name;
 
     context.registry.addImportDirective((node) {
@@ -61,7 +62,6 @@ class OnlyImportFromIndex extends DartLintRule {
       if (importedFeature == currentFeature) return;
 
       // Only index.dart is a valid cross-feature import target
-      final normalizedFeatures = toForwardSlash(p.normalize(cfg.featuresPath));
       final indexPath = '$normalizedFeatures/$importedFeature/index.dart';
       if (importedRel == indexPath) return;
 

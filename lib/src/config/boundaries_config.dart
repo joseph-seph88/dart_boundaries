@@ -4,13 +4,15 @@ import 'package:yaml/yaml.dart';
 
 class BannedImportEntry {
   const BannedImportEntry({
-    required this.paths,
+    this.paths,
     required this.deny,
+    this.excludePaths = const [],
     this.message,
   });
 
-  final List<String> paths;
+  final List<String>? paths; // null = applies to every file
   final List<String> deny;
+  final List<String> excludePaths;
   final String? message;
 }
 
@@ -21,11 +23,18 @@ class ElementType {
   final String pattern;
 }
 
+enum LayerBoundaryDefault { allow, disallow }
+
 class LayerRule {
-  const LayerRule({required this.from, required this.allow});
+  const LayerRule({
+    required this.from,
+    this.allow = const [],
+    this.disallow = const [],
+  });
 
   final String from;
   final List<String> allow;
+  final List<String> disallow;
 }
 
 /// Full `dart_boundaries:` config parsed from analysis_options.yaml.
@@ -108,14 +117,22 @@ class BoundariesConfig {
     final entries = <BannedImportEntry>[];
     for (final item in rawEntries) {
       if (item is! YamlMap) continue;
-      _warnUnknownKeys(item, const {'paths', 'deny', 'message'},
-          'no_banned_imports.entries[]');
-      final paths = _toStringList(item['paths']);
+      _warnUnknownKeys(
+        item,
+        const {'paths', 'deny', 'exclude_paths', 'message'},
+        'no_banned_imports.entries[]',
+      );
       final deny = _toStringList(item['deny']);
-      if (paths.isEmpty || deny.isEmpty) continue;
+      if (deny.isEmpty) continue;
+
+      // paths is optional: null means "apply to all files"
+      final pathsRaw = item['paths'];
+      final paths = pathsRaw != null ? _toStringList(pathsRaw) : null;
+
       entries.add(BannedImportEntry(
         paths: paths,
         deny: deny,
+        excludePaths: _toStringList(item['exclude_paths']),
         message: item['message'] as String?,
       ));
     }
@@ -134,7 +151,8 @@ class BoundariesConfig {
   static LayerBoundariesConfig? _parseLayerBoundaries(dynamic raw) {
     if (raw == null) return null;
     if (raw is! YamlMap) return null;
-    _warnUnknownKeys(raw, const {'elements', 'rules'}, 'layer_boundaries');
+    _warnUnknownKeys(
+        raw, const {'elements', 'rules', 'default'}, 'layer_boundaries');
 
     final elements = <ElementType>[];
     final rawElements = raw['elements'];
@@ -155,15 +173,36 @@ class BoundariesConfig {
     if (rawRules is YamlList) {
       for (final item in rawRules) {
         if (item is! YamlMap) continue;
-        _warnUnknownKeys(
-            item, const {'from', 'allow'}, 'layer_boundaries.rules[]');
+        _warnUnknownKeys(item, const {'from', 'allow', 'disallow'},
+            'layer_boundaries.rules[]');
         final from = item['from'] as String?;
         if (from == null) continue;
-        rules.add(LayerRule(from: from, allow: _toStringList(item['allow'])));
+        rules.add(LayerRule(
+          from: from,
+          allow: _toStringList(item['allow']),
+          disallow: _toStringList(item['disallow']),
+        ));
       }
     }
 
-    return LayerBoundariesConfig(elements: elements, rules: rules);
+    final defaultRaw = raw['default'] as String?;
+    if (defaultRaw != null &&
+        defaultRaw != 'allow' &&
+        defaultRaw != 'disallow') {
+      stderr.writeln(
+        '[dart_boundaries] Invalid value "$defaultRaw" for layer_boundaries.default. '
+        'Use "allow" or "disallow".',
+      );
+    }
+    final defaultBehavior = defaultRaw == 'disallow'
+        ? LayerBoundaryDefault.disallow
+        : LayerBoundaryDefault.allow;
+
+    return LayerBoundariesConfig(
+      elements: elements,
+      rules: rules,
+      defaultBehavior: defaultBehavior,
+    );
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
@@ -219,8 +258,10 @@ class LayerBoundariesConfig {
   const LayerBoundariesConfig({
     required this.elements,
     required this.rules,
+    this.defaultBehavior = LayerBoundaryDefault.allow,
   });
 
   final List<ElementType> elements;
   final List<LayerRule> rules;
+  final LayerBoundaryDefault defaultBehavior;
 }
