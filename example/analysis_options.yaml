@@ -1,0 +1,44 @@
+analyzer:
+  plugins:
+    - custom_lint
+
+custom_lint:
+  rules:
+    - layer_boundaries
+    - no_cross_feature_import
+    - no_banned_imports
+    - only_import_from_index
+
+dart_boundaries:
+  # ── layer_boundaries ──────────────────────────────────────────────────────
+  # Define named layer types and declare which layers may import from which.
+  layer_boundaries:
+    elements:
+      - type: feature
+        pattern: 'lib/features/*'   # * = one direct subfolder
+      - type: shared
+        pattern: 'lib/shared/**'    # ** = any depth
+      - type: core
+        pattern: 'lib/core/**'
+    rules:
+      - from: feature
+        allow: [shared, core]   # feature → feature is NOT allowed
+      - from: shared
+        allow: [core]           # shared may only reach core
+
+  # ── no_cross_feature_import ───────────────────────────────────────────────
+  no_cross_feature_import:
+    features_path: lib/features
+
+  # ── no_banned_imports ─────────────────────────────────────────────────────
+  no_banned_imports:
+    entries:
+      - paths:
+          - 'lib/features/home/**'
+        deny:
+          - 'lib/features/auth/**'
+        message: 'home → auth is banned. Pass AuthService via DI instead.'
+
+  # ── only_import_from_index ────────────────────────────────────────────────
+  only_import_from_index:
+    features_path: lib/features

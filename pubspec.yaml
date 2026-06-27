@@ -1,0 +1,22 @@
+name: dart_boundaries
+description: >-
+  Enforce import boundaries between features/modules in Dart & Flutter projects.
+  A free alternative to DCM avoid-banned-imports.
+version: 0.1.0
+homepage: https://github.com/YOUR_USERNAME/dart_boundaries
+repository: https://github.com/YOUR_USERNAME/dart_boundaries
+issue_tracker: https://github.com/YOUR_USERNAME/dart_boundaries/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  analyzer: '>=6.0.0 <8.0.0'
+  custom_lint_builder: '>=0.8.0 <1.0.0'
+  path: '>=1.9.0 <2.0.0'
+  yaml: '>=3.1.0 <4.0.0'
+
+dev_dependencies:
+  custom_lint: '>=0.8.0 <1.0.0'
+  lints: '>=6.0.0 <7.0.0'
+  test: '>=1.24.0 <2.0.0'

@@ -1,0 +1,12 @@
+name: dart_boundaries_example
+description: Example project demonstrating dart_boundaries lint rules.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dev_dependencies:
+  custom_lint: '>=0.8.0 <1.0.0'
+  dart_boundaries:
+    path: ../
