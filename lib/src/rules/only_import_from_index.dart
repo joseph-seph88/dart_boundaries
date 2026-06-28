@@ -24,7 +24,7 @@ class OnlyImportFromIndex extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final packageRoot = findPackageRoot(resolver.path);
@@ -76,7 +76,9 @@ class _ReplaceWithIndexFix extends DartFix {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
+    // ignore: deprecated_member_use
     AnalysisError analysisError,
+    // ignore: deprecated_member_use
     List<AnalysisError> others,
   ) {
     final packageRoot = findPackageRoot(resolver.path);

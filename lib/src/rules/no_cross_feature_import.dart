@@ -19,7 +19,7 @@ class NoCrossFeatureImport extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final packageRoot = findPackageRoot(resolver.path);

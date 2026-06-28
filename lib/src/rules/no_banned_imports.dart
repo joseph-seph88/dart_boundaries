@@ -25,7 +25,7 @@ class NoBannedImports extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final packageRoot = findPackageRoot(resolver.path);
@@ -89,7 +89,9 @@ class _RemoveBannedImportFix extends DartFix {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
+    // ignore: deprecated_member_use
     AnalysisError analysisError,
+    // ignore: deprecated_member_use
     List<AnalysisError> others,
   ) {
     context.registry.addImportDirective((node) {
