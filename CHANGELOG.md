@@ -1,3 +1,9 @@
+## 0.2.0
+
+- Upgraded to `custom_lint_builder` 0.8.1 and `analyzer` 8.4.0
+- Added library-level and `createPlugin` API documentation
+- Widened `analyzer` dependency constraint to `>=8.0.0 <15.0.0`
+
 ## 0.1.0
 
 - Initial release

@@ -30,7 +30,7 @@ lib/
 ```yaml
 dev_dependencies:
   custom_lint: '>=0.8.0 <1.0.0'
-  dart_boundaries: ^0.1.0
+  dart_boundaries: ^0.2.0
 ```
 
 **2. Run:**
