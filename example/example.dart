@@ -4,7 +4,7 @@
 // To try dart_boundaries:
 // 1. Add to pubspec.yaml dev_dependencies:
 //      custom_lint: '>=0.7.1 <1.0.0'
-//      dart_boundaries: ^0.3.0
+//      dart_boundaries: ^0.3.1
 // 2. Enable in analysis_options.yaml:
 //      analyzer:
 //        plugins:
