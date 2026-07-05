@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Widened the `analyzer` upper bound from `<9.1.0` to `<15.0.0` to pass pub.dev's "up-to-date dependencies" check; actual resolution is unaffected since `custom_lint_builder`/`custom_lint_visitor` still bound it to 8.x
+
 ## 0.3.0
 
 - Widened `custom_lint_builder` to `>=0.7.1 <1.0.0` and `analyzer` to `>=7.3.0 <9.1.0`, restoring support for Flutter 3.19+ / Dart 3.3+ (previously required Flutter 3.35+ / Dart 3.9+)

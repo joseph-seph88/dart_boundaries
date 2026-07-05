@@ -27,7 +27,7 @@ lib/
 
 | dart_boundaries | Flutter | Dart SDK | analyzer |
 |---|---|---|---|
-| `>=0.3.0` | 3.19 – 3.35.x | 3.3 – 3.9.x | 7.3.0 – 9.0.x |
+| `>=0.3.1` | 3.19 – 3.35.x | 3.3 – 3.9.x | 7.3.0 – 9.0.x |
 
 `dart_boundaries` builds on [`custom_lint_builder`](https://pub.dev/packages/custom_lint_builder), which in turn pins its supported `analyzer` versions through a companion package, `custom_lint_visitor`, published once per supported analyzer release. That companion package [is no longer actively maintained](https://github.com/invertase/dart_custom_lint) — the whole `custom_lint` project is archived in favor of the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — so analyzer support is a **fixed window**, not something that automatically follows new Flutter releases.
 
@@ -50,7 +50,7 @@ The version after `custom_lint_visitor: 1.0.0+` must exactly match the `analyzer
 ```yaml
 dev_dependencies:
   custom_lint: '>=0.7.1 <1.0.0'
-  dart_boundaries: ^0.3.0
+  dart_boundaries: ^0.3.1
 ```
 
 **2. Run:**
