@@ -23,14 +23,34 @@ lib/
 
 ---
 
+## Version compatibility
+
+| dart_boundaries | Flutter | Dart SDK | analyzer |
+|---|---|---|---|
+| `>=0.3.0` | 3.19 – 3.35.x | 3.3 – 3.9.x | 7.3.0 – 9.0.x |
+
+`dart_boundaries` builds on [`custom_lint_builder`](https://pub.dev/packages/custom_lint_builder), which in turn pins its supported `analyzer` versions through a companion package, `custom_lint_visitor`, published once per supported analyzer release. That companion package [is no longer actively maintained](https://github.com/invertase/dart_custom_lint) — the whole `custom_lint` project is archived in favor of the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — so analyzer support is a **fixed window**, not something that automatically follows new Flutter releases.
+
+**If `dart pub get` fails** with a version-solving error mentioning `analyzer` or `custom_lint_visitor`, your Flutter SDK ships a newer analyzer than this window covers. Rather than silently resolving to a mismatched pair (which fails at analysis time with confusing errors like "Undefined class"), pub will refuse to resolve at all — pin a known-good pair explicitly in your **app's** `pubspec.yaml`:
+
+```yaml
+dependency_overrides:
+  analyzer: 9.0.0
+  custom_lint_visitor: 1.0.0+9.0.0
+```
+
+The version after `custom_lint_visitor: 1.0.0+` must exactly match the `analyzer:` version above it. Check [available `custom_lint_visitor` versions](https://pub.dev/packages/custom_lint_visitor/versions) for the newest matching pair before assuming this exact one still applies.
+
+---
+
 ## Installation
 
 **1. Add to `pubspec.yaml`:**
 
 ```yaml
 dev_dependencies:
-  custom_lint: '>=0.8.0 <1.0.0'
-  dart_boundaries: ^0.2.0
+  custom_lint: '>=0.7.1 <1.0.0'
+  dart_boundaries: ^0.3.0
 ```
 
 **2. Run:**
