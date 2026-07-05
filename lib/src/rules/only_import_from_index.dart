@@ -24,7 +24,8 @@ class OnlyImportFromIndex extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    // ignore: deprecated_member_use
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     final packageRoot = findPackageRoot(resolver.path);
