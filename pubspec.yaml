@@ -2,20 +2,20 @@ name: dart_boundaries
 description: >-
   A custom lint package for enforcing feature and layer import boundaries
   in Dart/Flutter projects.
-version: 0.3.1
+version: 0.4.0
 repository: https://github.com/joseph-seph88/dart_boundaries
 issue_tracker: https://github.com/joseph-seph88/dart_boundaries/issues
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ^3.13.0
 
 dependencies:
-  analyzer: '>=7.3.0 <15.0.0'
-  custom_lint_builder: '>=0.7.1 <1.0.0'
+  analysis_server_plugin: ^0.3.25
+  analyzer: ^14.6.0
+  analyzer_plugin: ^0.14.19
   path: '>=1.9.0 <2.0.0'
   yaml: '>=3.1.0 <4.0.0'
 
 dev_dependencies:
-  custom_lint: '>=0.7.1 <1.0.0'
   lints: '>=6.0.0 <7.0.0'
   test: '>=1.24.0 <2.0.0'

@@ -25,50 +25,34 @@ lib/
 
 ## Version compatibility
 
-| dart_boundaries | Flutter | Dart SDK | analyzer |
-|---|---|---|---|
-| `>=0.3.1` | 3.19 – 3.35.x | 3.3 – 3.9.x | 7.3.0 – 9.0.x |
+| dart_boundaries | Dart SDK | Flutter |
+|---|---|---|
+| `>=0.4.0` | 3.13+ | 3.47+ |
+| `<=0.3.x` | 3.3 – 3.9.x | 3.19 – 3.35.x |
 
-`dart_boundaries` builds on [`custom_lint_builder`](https://pub.dev/packages/custom_lint_builder), which in turn pins its supported `analyzer` versions through a companion package, `custom_lint_visitor`, published once per supported analyzer release. That companion package [is no longer actively maintained](https://github.com/invertase/dart_custom_lint) — the whole `custom_lint` project is archived in favor of the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — so analyzer support is a **fixed window**, not something that automatically follows new Flutter releases.
+`0.4.0` is built on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) and replaces `custom_lint`, which is archived. Violations now show up in `dart analyze` / `flutter analyze` and in your IDE with no separate command.
 
-**If `dart pub get` fails** with a version-solving error mentioning `analyzer` or `custom_lint_visitor`, your Flutter SDK ships a newer analyzer than this window covers. Rather than silently resolving to a mismatched pair (which fails at analysis time with confusing errors like "Undefined class"), pub will refuse to resolve at all — pin a known-good pair explicitly in your **app's** `pubspec.yaml`:
+If you are on an older SDK, stay on `0.3.x` and keep using `dart run custom_lint`. Newer SDKs print a deprecation warning for the legacy `analyzer: plugins: - custom_lint` entry, which only goes away after migrating.
 
-```yaml
-dependency_overrides:
-  analyzer: 9.0.0
-  custom_lint_visitor: 1.0.0+9.0.0
-```
+### Migrating from 0.3.x
 
-The version after `custom_lint_visitor: 1.0.0+` must exactly match the `analyzer:` version above it. Check [available `custom_lint_visitor` versions](https://pub.dev/packages/custom_lint_visitor/versions) for the newest matching pair before assuming this exact one still applies.
+1. Remove `custom_lint` and `dart_boundaries` from `dev_dependencies` in `pubspec.yaml`.
+2. Remove the `analyzer: plugins: - custom_lint` entry and the `custom_lint: rules:` block from `analysis_options.yaml`.
+3. Add the top-level `plugins:` block shown below. The `dart_boundaries:` block is unchanged.
+4. Change `// ignore: dart_boundaries/layer_boundaries` comments to `// ignore: dart_boundaries/layer_boundaries`.
 
 ---
 
 ## Installation
 
-**1. Add to `pubspec.yaml`:**
+Enable the plugin and configure rules in `analysis_options.yaml`. No `pubspec.yaml` change is needed; the analysis server fetches the plugin itself.
 
 ```yaml
-dev_dependencies:
-  custom_lint: '>=0.7.1 <1.0.0'
-  dart_boundaries: ^0.3.1
-```
-
-**2. Run:**
-
-```sh
-dart pub get
-```
-
-**3. Enable the plugin and configure rules in `analysis_options.yaml`:**
-
-```yaml
-analyzer:
-  plugins:
-    - custom_lint
-
-custom_lint:
-  rules:
-    - layer_boundaries
+plugins:
+  dart_boundaries:
+    version: ^0.4.0
+    diagnostics:
+      layer_boundaries: true
 
 dart_boundaries:
   layer_boundaries:
@@ -87,11 +71,11 @@ dart_boundaries:
         allow: [core]
 ```
 
-**4. Restart your IDE's analysis server** to activate the plugin.
+Then **restart your IDE's analysis server** and run `dart analyze` (or `flutter analyze`).
 
-> `custom_lint: rules:` controls which rules are active.  
-> `dart_boundaries:` controls each rule's options.  
-> After editing `analysis_options.yaml`, restart the analysis server to pick up config changes.
+> `plugins: dart_boundaries: diagnostics:` controls which rules are active (`no_cross_feature_import`, `no_banned_imports`, `only_import_from_index`, `layer_boundaries`).  
+> The top-level `dart_boundaries:` block controls each rule's options.  
+> The `plugins:` section must be in the package's root `analysis_options.yaml`, and the analysis server must be restarted after editing it.
 
 ---
 
@@ -260,14 +244,14 @@ import 'package:app/features/auth/index.dart';
 ## Suppressing a violation
 
 ```dart
-// ignore: layer_boundaries
+// ignore: dart_boundaries/layer_boundaries
 import 'package:app/features/auth/auth_service.dart';
 ```
 
 Or for the whole file:
 
 ```dart
-// ignore_for_file: layer_boundaries
+// ignore_for_file: dart_boundaries/layer_boundaries
 ```
 
 ---

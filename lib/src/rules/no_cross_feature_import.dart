@@ -1,65 +1,83 @@
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 import '../config/boundaries_config.dart';
 import '../utils/package_utils.dart';
 
-class NoCrossFeatureImport extends DartLintRule {
-  const NoCrossFeatureImport() : super(code: _code);
+class NoCrossFeatureImport extends AnalysisRule {
+  NoCrossFeatureImport()
+    : super(
+        name: 'no_cross_feature_import',
+        description: 'Reports imports from one feature into another.',
+      );
 
-  static const _code = LintCode(
-    name: 'no_cross_feature_import',
-    problemMessage: 'Avoid importing directly from another feature.',
+  /// `{0}` is the configured message, or [defaultMessage] when none is set.
+  static const code = LintCode(
+    'no_cross_feature_import',
+    '{0}',
     correctionMessage:
         'Try using a shared layer or dependency injection instead.',
   );
 
-  @override
-  bool get enabledByDefault => false;
+  static const defaultMessage =
+      'Avoid importing directly from another feature.';
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    // ignore: deprecated_member_use
-    ErrorReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    final packageRoot = findPackageRoot(resolver.path);
+    registry.addImportDirective(this, _Visitor(this, context));
+  }
+}
+
+class _Visitor extends SimpleAstVisitor<void> {
+  _Visitor(this.rule, this.context);
+
+  final NoCrossFeatureImport rule;
+  final RuleContext context;
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    final unit = context.currentUnit;
+    if (unit == null) return;
+    final filePath = unit.file.path;
+
+    final packageRoot = findPackageRoot(filePath);
     if (packageRoot == null) return;
 
     final cfg = BoundariesConfig.load(packageRoot)?.noCrossFeatureImport;
     if (cfg == null) return;
 
     final currentRel = toForwardSlash(
-      resolver.path.substring(packageRoot.length + 1),
+      filePath.substring(packageRoot.length + 1),
     );
     final currentFeature = extractFeatureName(currentRel, cfg.featuresPath);
     if (currentFeature == null) return;
 
-    final effectiveCode = cfg.message != null
-        ? LintCode(
-            name: _code.name,
-            problemMessage: cfg.message!,
-            correctionMessage: _code.correctionMessage,
-          )
-        : _code;
-    final packageName = context.pubspec.name;
+    final uri = node.uri.stringValue;
+    if (uri == null) return;
 
-    context.registry.addImportDirective((node) {
-      final uri = node.uri.stringValue;
-      if (uri == null) return;
+    final importedRel = importToRelativePath(
+      importUri: uri,
+      currentFilePath: filePath,
+      packageRoot: packageRoot,
+      packageName: readPackageName(packageRoot),
+    );
+    if (importedRel == null) return;
 
-      final importedRel = importToRelativePath(
-        importUri: uri,
-        currentFilePath: resolver.path,
-        packageRoot: packageRoot,
-        packageName: packageName,
-      );
-      if (importedRel == null) return;
+    final importedFeature = extractFeatureName(importedRel, cfg.featuresPath);
+    if (importedFeature == null || importedFeature == currentFeature) return;
 
-      final importedFeature = extractFeatureName(importedRel, cfg.featuresPath);
-      if (importedFeature == null || importedFeature == currentFeature) return;
-
-      reporter.atNode(node, effectiveCode);
-    });
+    rule.reportAtNode(
+      node,
+      arguments: [cfg.message ?? NoCrossFeatureImport.defaultMessage],
+    );
   }
 }

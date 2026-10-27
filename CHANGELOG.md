@@ -1,3 +1,11 @@
+## 0.4.0
+
+- **Breaking:** migrated from the archived `custom_lint` to the official `analysis_server_plugin`. Requires Dart 3.13+ / Flutter 3.47+; stay on 0.3.x for older SDKs.
+- Violations now appear in `dart analyze` / `flutter analyze`; `dart run custom_lint` is no longer needed.
+- Removes the `analyzer: plugins: - custom_lint` entry that newer SDKs warn about as deprecated.
+- Plugin is enabled via the top-level `plugins:` section of `analysis_options.yaml`; rules are turned on under `plugins: dart_boundaries: diagnostics:`. The `dart_boundaries:` options block is unchanged.
+- Ignore comments now use `// ignore: dart_boundaries/<rule>`.
+
 ## 0.3.1
 
 - Widened the `analyzer` upper bound from `<9.1.0` to `<15.0.0` to pass pub.dev's "up-to-date dependencies" check; actual resolution is unaffected since `custom_lint_builder`/`custom_lint_visitor` still bound it to 8.x
