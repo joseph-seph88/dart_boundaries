@@ -4,6 +4,7 @@ import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
+
 import '../config/boundaries_config.dart';
 import '../utils/package_utils.dart';
 import '../utils/pattern_matcher.dart';

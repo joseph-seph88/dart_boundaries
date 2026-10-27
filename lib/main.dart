@@ -1,5 +1,6 @@
 import 'package:analysis_server_plugin/plugin.dart';
 import 'package:analysis_server_plugin/registry.dart';
+
 import 'src/rules/layer_boundaries.dart';
 import 'src/rules/no_banned_imports.dart';
 import 'src/rules/no_cross_feature_import.dart';

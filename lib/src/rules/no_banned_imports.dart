@@ -9,6 +9,7 @@ import 'package:analyzer/error/error.dart';
 import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
 import 'package:analyzer_plugin/utilities/fixes/fixes.dart';
 import 'package:analyzer_plugin/utilities/range_factory.dart';
+
 import '../config/boundaries_config.dart';
 import '../utils/package_utils.dart';
 import '../utils/pattern_matcher.dart';
