@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -68,22 +69,21 @@ class BoundariesConfig {
       final section = yaml['dart_boundaries'];
       if (section is! YamlMap) return _cache[packageRoot] = null;
 
-      _warnUnknownKeys(
-          section,
-          const {
-            'no_cross_feature_import',
-            'no_banned_imports',
-            'only_import_from_index',
-            'layer_boundaries',
-          },
-          'dart_boundaries');
+      _warnUnknownKeys(section, const {
+        'no_cross_feature_import',
+        'no_banned_imports',
+        'only_import_from_index',
+        'layer_boundaries',
+      }, 'dart_boundaries');
 
       return _cache[packageRoot] = BoundariesConfig(
-        noCrossFeatureImport:
-            _parseNoCrossFeature(section['no_cross_feature_import']),
+        noCrossFeatureImport: _parseNoCrossFeature(
+          section['no_cross_feature_import'],
+        ),
         noBannedImports: _parseNoBannedImports(section['no_banned_imports']),
-        onlyImportFromIndex:
-            _parseOnlyImportFromIndex(section['only_import_from_index']),
+        onlyImportFromIndex: _parseOnlyImportFromIndex(
+          section['only_import_from_index'],
+        ),
         layerBoundaries: _parseLayerBoundaries(section['layer_boundaries']),
       );
     } catch (_) {
@@ -96,8 +96,10 @@ class BoundariesConfig {
   static NoCrossFeatureConfig? _parseNoCrossFeature(dynamic raw) {
     if (raw == null) return null;
     if (raw is! YamlMap) return const NoCrossFeatureConfig();
-    _warnUnknownKeys(
-        raw, const {'features_path', 'message'}, 'no_cross_feature_import');
+    _warnUnknownKeys(raw, const {
+      'features_path',
+      'message',
+    }, 'no_cross_feature_import');
     return NoCrossFeatureConfig(
       featuresPath: raw['features_path'] as String? ?? 'lib/features',
       message: raw['message'] as String?,
@@ -117,11 +119,12 @@ class BoundariesConfig {
     final entries = <BannedImportEntry>[];
     for (final item in rawEntries) {
       if (item is! YamlMap) continue;
-      _warnUnknownKeys(
-        item,
-        const {'paths', 'deny', 'exclude_paths', 'message'},
-        'no_banned_imports.entries[]',
-      );
+      _warnUnknownKeys(item, const {
+        'paths',
+        'deny',
+        'exclude_paths',
+        'message',
+      }, 'no_banned_imports.entries[]');
       final deny = _toStringList(item['deny']);
       if (deny.isEmpty) continue;
 
@@ -129,12 +132,14 @@ class BoundariesConfig {
       final pathsRaw = item['paths'];
       final paths = pathsRaw != null ? _toStringList(pathsRaw) : null;
 
-      entries.add(BannedImportEntry(
-        paths: paths,
-        deny: deny,
-        excludePaths: _toStringList(item['exclude_paths']),
-        message: item['message'] as String?,
-      ));
+      entries.add(
+        BannedImportEntry(
+          paths: paths,
+          deny: deny,
+          excludePaths: _toStringList(item['exclude_paths']),
+          message: item['message'] as String?,
+        ),
+      );
     }
     return NoBannedImportsConfig(entries: entries);
   }
@@ -151,16 +156,21 @@ class BoundariesConfig {
   static LayerBoundariesConfig? _parseLayerBoundaries(dynamic raw) {
     if (raw == null) return null;
     if (raw is! YamlMap) return null;
-    _warnUnknownKeys(
-        raw, const {'elements', 'rules', 'default'}, 'layer_boundaries');
+    _warnUnknownKeys(raw, const {
+      'elements',
+      'rules',
+      'default',
+    }, 'layer_boundaries');
 
     final elements = <ElementType>[];
     final rawElements = raw['elements'];
     if (rawElements is YamlList) {
       for (final item in rawElements) {
         if (item is! YamlMap) continue;
-        _warnUnknownKeys(
-            item, const {'type', 'pattern'}, 'layer_boundaries.elements[]');
+        _warnUnknownKeys(item, const {
+          'type',
+          'pattern',
+        }, 'layer_boundaries.elements[]');
         final type = item['type'] as String?;
         final pattern = item['pattern'] as String?;
         if (type == null || pattern == null) continue;
@@ -173,15 +183,20 @@ class BoundariesConfig {
     if (rawRules is YamlList) {
       for (final item in rawRules) {
         if (item is! YamlMap) continue;
-        _warnUnknownKeys(item, const {'from', 'allow', 'disallow'},
-            'layer_boundaries.rules[]');
+        _warnUnknownKeys(item, const {
+          'from',
+          'allow',
+          'disallow',
+        }, 'layer_boundaries.rules[]');
         final from = item['from'] as String?;
         if (from == null) continue;
-        rules.add(LayerRule(
-          from: from,
-          allow: _toStringList(item['allow']),
-          disallow: _toStringList(item['disallow']),
-        ));
+        rules.add(
+          LayerRule(
+            from: from,
+            allow: _toStringList(item['allow']),
+            disallow: _toStringList(item['disallow']),
+          ),
+        );
       }
     }
 

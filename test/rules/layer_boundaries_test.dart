@@ -218,34 +218,53 @@ void main() {
       return cfg.defaultBehavior == LayerBoundaryDefault.disallow;
     }
 
-    test('feature → core is blocked when not in allow list (default disallow)',
-        () {
-      final featureCaptures = {'name': 'auth'};
-      final coreCaptures = <String, String>{};
-      expect(
-        shouldFlag(
-            cfgDefault, 'feature', featureCaptures, 'core', coreCaptures),
-        isTrue,
-      );
-    });
+    test(
+      'feature → core is blocked when not in allow list (default disallow)',
+      () {
+        final featureCaptures = {'name': 'auth'};
+        final coreCaptures = <String, String>{};
+        expect(
+          shouldFlag(
+            cfgDefault,
+            'feature',
+            featureCaptures,
+            'core',
+            coreCaptures,
+          ),
+          isTrue,
+        );
+      },
+    );
 
-    test('feature → shared is allowed (in allow list regardless of default)',
-        () {
-      final featureCaptures = {'name': 'auth'};
-      final sharedCaptures = <String, String>{};
-      expect(
-        shouldFlag(
-            cfgDefault, 'feature', featureCaptures, 'shared', sharedCaptures),
-        isFalse,
-      );
-    });
+    test(
+      'feature → shared is allowed (in allow list regardless of default)',
+      () {
+        final featureCaptures = {'name': 'auth'};
+        final sharedCaptures = <String, String>{};
+        expect(
+          shouldFlag(
+            cfgDefault,
+            'feature',
+            featureCaptures,
+            'shared',
+            sharedCaptures,
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('core → feature blocked when no rule and default is disallow', () {
       final coreCaptures = <String, String>{};
       final featureCaptures = {'name': 'home'};
       expect(
         shouldFlag(
-            cfgDefault, 'core', coreCaptures, 'feature', featureCaptures),
+          cfgDefault,
+          'core',
+          coreCaptures,
+          'feature',
+          featureCaptures,
+        ),
         isTrue,
       );
     });
@@ -259,16 +278,23 @@ void main() {
       );
     });
 
-    test('feature → feature (cross-feature) always blocked by disallow rule',
-        () {
-      final authCaptures = {'name': 'auth'};
-      final homeCaptures = {'name': 'home'};
-      expect(
-        shouldFlag(
-            cfgDefault, 'feature', authCaptures, 'feature', homeCaptures),
-        isTrue,
-      );
-    });
+    test(
+      'feature → feature (cross-feature) always blocked by disallow rule',
+      () {
+        final authCaptures = {'name': 'auth'};
+        final homeCaptures = {'name': 'home'};
+        expect(
+          shouldFlag(
+            cfgDefault,
+            'feature',
+            authCaptures,
+            'feature',
+            homeCaptures,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('intra-feature never blocked even with default disallow', () {
       final authA = {'name': 'auth'};

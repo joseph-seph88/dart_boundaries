@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 /// Traverses up from [filePath] until a directory containing pubspec.yaml is found.
 /// Returns the absolute path of the package root, or null if not found.
@@ -11,6 +13,14 @@ String? findPackageRoot(String filePath) {
     if (parent == dir) return null;
     dir = parent;
   }
+}
+
+/// Reads the `name:` field of the pubspec.yaml in [packageRoot].
+String readPackageName(String packageRoot) {
+  final yaml = loadYaml(
+    File(p.join(packageRoot, 'pubspec.yaml')).readAsStringSync(),
+  );
+  return (yaml as YamlMap)['name'] as String;
 }
 
 /// Resolves an import URI to a path relative to the package root.

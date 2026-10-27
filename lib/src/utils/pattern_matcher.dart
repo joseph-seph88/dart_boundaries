@@ -44,8 +44,9 @@ Map<String, String>? matchElementPatternWithCaptures(
 
   if (pattern.contains('{{')) {
     final (regexBase, captureNames) = _buildCapturingRegex(pattern);
-    final regexStr =
-        _needsTrailingSuffix(pattern) ? '$regexBase(/.*)?' : regexBase;
+    final regexStr = _needsTrailingSuffix(pattern)
+        ? '$regexBase(/.*)?'
+        : regexBase;
     try {
       final match = RegExp('^$regexStr\$').firstMatch(normalizedPath);
       if (match == null) return null;
